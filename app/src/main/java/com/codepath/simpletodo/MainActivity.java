@@ -1,5 +1,6 @@
 package com.codepath.simpletodo;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -8,7 +9,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import org.apache.commons.io.FileUtils;
 
@@ -18,9 +18,14 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 
 import static android.widget.Toast.LENGTH_SHORT;
+import static android.widget.Toast.makeText;
 
 public class MainActivity extends AppCompatActivity
 {
+    public final static int EDIT_REQUEST_CODE=20;
+    public final static String ITEM_TEXT = "itemText";
+    public final static String ITEM_POSITION = "itemPosition";
+
     ArrayList<String> items;
     ArrayAdapter<String> itemsAdapter;
     ListView lvItems;
@@ -50,7 +55,7 @@ public class MainActivity extends AppCompatActivity
         itemsAdapter.add((itemText));
         etNewItem.setText("");
         writeItems();
-        Toast.makeText(getApplicationContext(), "Item Added to List", LENGTH_SHORT).show();
+        makeText(getApplicationContext(), "Item Added to List", LENGTH_SHORT).show();
 
     }
 
@@ -69,6 +74,37 @@ public class MainActivity extends AppCompatActivity
                 return true;
             }
         });
+        //item listener for edit
+        lvItems.setOnItemClickListener(new AdapterView.OnItemClickListener()
+        {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+            {
+                //create new Activity
+                Intent i= new Intent(MainActivity.this, EditItemActivity.class);
+                //pass the data being edited
+                i.putExtra(ITEM_TEXT, items.get(position));
+                i.putExtra(ITEM_POSITION, position);
+                //display the actvity
+                startActivityForResult(i, EDIT_REQUEST_CODE);
+            }
+        });
+    }
+
+  @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        super.onActivityResult(requestCode, resultCode, data);
+       if(resultCode == RESULT_OK && requestCode==EDIT_REQUEST_CODE)
+        {
+            String updatedItem= data.getExtras().getString(ITEM_TEXT);
+            int position = data.getExtras().getInt(ITEM_POSITION);
+            items.set(position, updatedItem);
+            itemsAdapter.notifyDataSetChanged();
+            writeItems();
+            makeText(this, "Item updated successfully", LENGTH_SHORT).show();
+
+        }
     }
     private File getDataFile()
     {
